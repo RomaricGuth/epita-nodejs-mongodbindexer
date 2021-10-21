@@ -1,0 +1,8 @@
+{
+  "name": "sirene-invader",
+  "version": "1.0.0",
+  "description": "epita nodejs final project",
+  "main": "index.js",
+  "author": "romaric.guth <romaric.guth@epita.fr>",
+  "license": "MIT"
+}
