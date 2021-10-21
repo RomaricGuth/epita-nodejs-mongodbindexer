@@ -4,5 +4,9 @@
   "description": "epita nodejs final project",
   "main": "index.js",
   "author": "romaric.guth <romaric.guth@epita.fr>",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "pm2": "^5.1.2"
+  },
+  "type": "module"
 }
