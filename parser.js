@@ -1,16 +1,20 @@
 import {open} from 'fs/promises';
 import {Buffer} from 'buffer';
+import {MongoClient} from 'mongodb';
 
 const endline = '\n'.charCodeAt(0);
 const separator = ','.charCodeAt(0);
 const bufferLen = 1024 * 64; // 64 KB
 
 export const parseCsv = async (path, indexes, keys) => {
+  const client = new MongoClient('mongodb://127.0.0.1:27017/');
+  await client.connect();
+  const bulk = await client.db('stock').collection('stock').initializeUnorderedBulkOp();
+
   const filehandle = await open(path);
   const buf = Buffer.allocUnsafe(bufferLen);
   let bytesRead;
 
-  let res = [];
   let entry = {};
 
   let nb_keeped_fields = 0; // number of fields stored from the line
@@ -31,7 +35,7 @@ export const parseCsv = async (path, indexes, keys) => {
         }
 
         if (buf[i] === endline) {
-          res.push(entry);
+          bulk.insert(entry);
           entry = {};
 
           nb_read_fields = 0;
@@ -46,5 +50,6 @@ export const parseCsv = async (path, indexes, keys) => {
   }
 
   filehandle.close();
-  console.log(res);
+  console.log('start operations');
+  bulk.execute();
 }

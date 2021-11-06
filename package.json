@@ -6,6 +6,7 @@
   "author": "romaric.guth <romaric.guth@epita.fr>",
   "license": "MIT",
   "dependencies": {
+    "mongodb": "^4.1.4",
     "pm2": "^5.1.2"
   },
   "type": "module"
