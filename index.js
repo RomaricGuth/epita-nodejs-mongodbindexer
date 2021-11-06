@@ -3,6 +3,7 @@ import pm2 from 'pm2';
 import {open, mkdir} from 'fs/promises';
 import {createReadStream, createWriteStream} from 'fs';
 import {splitCsvLine, splitCsvLineWithIndexes} from './csv_utils.js';
+import {parseCsv} from './parser.js';
 
 const filehandle = await open('./csv/header.csv');
 const buf = await filehandle.readFile();
@@ -25,7 +26,8 @@ const needed = [
 ];
 
 const indexes = needed.map((key) => fields.indexOf(key));
-console.log(splitCsvLineWithIndexes(buf, indexes));
+
+parseCsv('./csv/csv-0000.csv', indexes, needed);
 
 /*
 pm2.connect((err) => {
