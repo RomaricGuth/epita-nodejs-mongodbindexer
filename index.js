@@ -27,8 +27,6 @@ const needed = [
 
 const indexes = needed.map((key) => fields.indexOf(key));
 
-//parseCsv('./csv/csv-0000.csv', indexes, needed);
-
 pm2.connect((err) => {
   if (err) {
     console.error(err)
@@ -42,7 +40,7 @@ pm2.connect((err) => {
     pm2.start({
       script: './worker.js',
       name: 'demo',
-      args: [filename, indexes, fields],
+      args: [filename, JSON.stringify(indexes), JSON.stringify(fields)],
     }, (err, apps) => {
       console.log(err);
       console.log(apps);
