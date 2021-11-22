@@ -33,17 +33,16 @@ pm2.connect((err) => {
     process.exit(2)
   }
 
-  const nbfiles = 1;
+  const nbfiles = 4;
 
   for (let i = 0; i < nbfiles; i += 1) {
     const filename = `./csv/csv-${i.toString().padStart(4, '0')}.csv`;
     pm2.start({
       script: './worker.js',
       name: 'demo',
-      args: [filename, JSON.stringify(indexes), JSON.stringify(fields)],
+      autorestart: false,
+      args: [filename, JSON.stringify(indexes), JSON.stringify(needed)],
     }, (err, apps) => {
-      console.log(err);
-      console.log(apps);
       pm2.disconnect();
     });
   }
