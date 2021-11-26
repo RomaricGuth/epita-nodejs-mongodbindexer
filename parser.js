@@ -7,8 +7,6 @@ const separator = ','.charCodeAt(0);
 const bufferLen = 1024 * 64; // 64 KB
 
 export const parseCsv = async (path, indexes, keys) => {
-  console.log(indexes);
-  console.log(keys);
   const client = new MongoClient('mongodb://127.0.0.1:27017/');
   await client.connect();
   const bulk = await client.db('stock').collection('stock').initializeUnorderedBulkOp();

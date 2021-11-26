@@ -33,15 +33,27 @@ pm2.connect((err) => {
     process.exit(2)
   }
 
-  const nbfiles = 4;
+  const nbfiles = 84;
+  const nbthread = 4;
+  const files_per_thread = Math.floor(nbfiles / nbthread);
+  const remain = nbfiles - nbthread * files_per_thread;
 
-  for (let i = 0; i < nbfiles; i += 1) {
-    const filename = `./csv/csv-${i.toString().padStart(4, '0')}.csv`;
+  const filenames = new Array(nbfiles);
+  for (let i = 0; i < nbfiles; i++) {
+    filenames[i] = `./csv/csv-${i.toString().padStart(4, '0')}.csv`;
+  }
+
+  for (let i = 0; i < nbthread; i++) {
+    const add_one_file = i < remain;
+    const first_file_index = i * files_per_thread + (add_one_file ? i : remain);
+    const arg_filenames = filenames.slice(first_file_index, first_file_index + files_per_thread + add_one_file);
+    const args = [JSON.stringify(arg_filenames), JSON.stringify(indexes), JSON.stringify(needed)];
+    console.log(`worker ${i}: ${args}`);
     pm2.start({
       script: './worker.js',
       name: 'demo',
       autorestart: false,
-      args: [filename, JSON.stringify(indexes), JSON.stringify(needed)],
+      args: args,
     }, (err, apps) => {
       pm2.disconnect();
     });
