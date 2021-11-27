@@ -17,6 +17,7 @@ export const parseCsv = async (path, indexes, keys) => {
 
   let entry = {};
 
+  let nb_lines = 0;
   let nb_keeped_fields = 0; // number of fields stored from the line
   let nb_read_fields = 0; // number of fields read from the line
   let field = []; // current field in array of charcode
@@ -40,6 +41,7 @@ export const parseCsv = async (path, indexes, keys) => {
 
           nb_read_fields = 0;
           nb_keeped_fields = 0;
+          nb_lines++;
         } else {
           nb_read_fields++;
         }
@@ -51,5 +53,7 @@ export const parseCsv = async (path, indexes, keys) => {
 
   await filehandle.close();
   await bulk.execute();
-  client.close();
+  await client.close();
+
+  return nb_lines;
 }
