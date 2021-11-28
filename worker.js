@@ -12,7 +12,8 @@ function sleep(timeout_ms) {
   return new Promise((resolve) => setTimeout(resolve, timeout_ms));
 }
 
-const t1 = Date.now();
+let t1 = Date.now();
+let total_time = 0; // to store current time elapsed when paused
 
 const args = process.argv.slice(2);
 const filenames = JSON.parse(args[0]);
@@ -31,9 +32,12 @@ process.on('message', function({data}) {
   switch (cmd) {
     case 'pause':
       pause = true;
+      const delta = Date.now() - t1;
+      total_time += delta; // store time elapsed when working
       break;
 
     case 'resume':
+      t1 = Date.now();
       pause = false;
       break;
 
@@ -62,4 +66,5 @@ for (let filename of filenames) {
 await client.close();
 
 const delta = Date.now() - t1;
-sendDataToMaster({cmd: 'worker_done', nb_inserts: total_collections, time_ms: delta});
+total_time += delta;
+sendDataToMaster({cmd: 'worker_done', nb_inserts: total_collections, time_ms: total_time});

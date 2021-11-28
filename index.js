@@ -4,13 +4,14 @@ import {open, mkdir} from 'fs/promises';
 import {createReadStream, createWriteStream} from 'fs';
 import { stdin as input, stdout as output } from 'process';
 import * as readline from 'readline';
-import {splitCsvLineWithIndexes} from './csv_utils.js';
+import {splitCsvLine} from './csv_utils.js';
 import {parseCsv} from './parser.js';
 
 const nbfiles = 5334;
 const nbthread = 4;
 
-const t1 = Date.now();
+let t1 = Date.now();
+let total_time = 0;
 
 const filehandle = await open('./csv/header.csv');
 const buf = await filehandle.readFile();
@@ -64,6 +65,7 @@ pm2.connect((err) => {
   }
 });
 
+const rl = readline.createInterface({ input, output });
 let total_inserts = 0;
 let workers_done = 0;
 
@@ -86,11 +88,13 @@ pm2.launchBus((err, pm2_bus) => {
         workers_done++;
 
         if (workers_done == nbthread) {
-          const total_time = Date.now() - t1;
+          const delta = Date.now() - t1;
+          total_time += delta;
           const insert_per_sec = total_inserts / (total_time / 1000);
           console.log(`Total: ${total_inserts} insertions in ${total_time}ms !`);
           console.log(`Average: ${insert_per_sec} insertions / seconds !`);
-          pm2.disconnect()
+          rl.close();
+          pm2.disconnect();
         }
         break;
 
@@ -132,13 +136,14 @@ function resumeWorkers() {
 
 let pause = false;
 // prompt user for commands
-const rl = readline.createInterface({ input, output });
 rl.on('line', (input) => {
   switch (input) {
     case 'pause':
       if (pause) {
         console.log('insertion already paused');
       } else {
+        const delta = Date.now() - t1;
+        total_time += delta;
         pauseWorkers();
         pause = true;
         console.log('insertion paused - enter resume to resume the process');
@@ -147,6 +152,7 @@ rl.on('line', (input) => {
 
     case 'resume':
       if (pause) {
+        t1 = Date.now(); // restart timer
         resumeWorkers();
         pause = false;
         console.log('insertion resumed !');
