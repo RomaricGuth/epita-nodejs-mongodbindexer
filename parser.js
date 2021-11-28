@@ -1,14 +1,11 @@
 import {open} from 'fs/promises';
 import {Buffer} from 'buffer';
-import {MongoClient} from 'mongodb';
 
 const endline = '\n'.charCodeAt(0);
 const separator = ','.charCodeAt(0);
 const bufferLen = 1024 * 64; // 64 KB
 
-export const parseCsv = async (path, indexes, keys) => {
-  const client = new MongoClient('mongodb://127.0.0.1:27017/');
-  await client.connect();
+export const parseCsv = async (path, indexes, keys, client) => {
   const bulk = await client.db('stock').collection('stock').initializeUnorderedBulkOp();
 
   const filehandle = await open(path);
@@ -51,9 +48,8 @@ export const parseCsv = async (path, indexes, keys) => {
     }
   }
 
-  await filehandle.close();
+  filehandle.close();
   await bulk.execute();
-  await client.close();
 
   return nb_lines;
 }

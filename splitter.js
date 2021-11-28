@@ -2,33 +2,19 @@ import {open, mkdir} from 'fs/promises';
 import {createReadStream, createWriteStream} from 'fs';
 import {Buffer} from 'buffer';
 
-const t1 = new Date().getTime();
+const t1 = Date.now();
 
 const path = './StockEtablissement_utf8.csv';
 const endline = '\n'.charCodeAt(0);
 const separator = ','.charCodeAt(0);
-const fileMaxLen = 1024 * 1024 * 64; // 64 MB
+const fileMaxLen = 1024 * 1024; // 1 MB
 const bufferLen = 1024 * 64; // 64 KB
 
 const filehandle = await open(path);
 const buf = Buffer.allocUnsafe(bufferLen);
-/*
-const rs = createReadStream(path);
-const ws = (await open('header.csv', 'w')).createWriteStream();
-rs.pipe(ws)
-*/
 
 let headerLen = 0;
 for (; headerLen === 0 || buf[headerLen - 1] !== endline; headerLen++) {
-  /*
-  await filehandle.read({
-    buffer: buf,
-    offset: headerLen,
-    position: headerLen,
-    length: 1,
-  });
-
-   */
   await filehandle.read(buf, headerLen, 1);
 }
 
@@ -78,4 +64,4 @@ while ((bytesRead = (await filehandle.read(buf, remainBytes, bufferLen - remainB
   }
 }
 
-console.log(`splitted file in ${nbfiles} in ${new Date().getTime() - t1}ms`);
+console.log(`splitted file in ${nbfiles} in ${Date.now() - t1}ms`);

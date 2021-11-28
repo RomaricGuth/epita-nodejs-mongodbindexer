@@ -2,11 +2,15 @@ import pm2 from 'pm2';
 
 import {open, mkdir} from 'fs/promises';
 import {createReadStream, createWriteStream} from 'fs';
+import { stdin as input, stdout as output } from 'process';
+import * as readline from 'readline';
 import {splitCsvLine, splitCsvLineWithIndexes} from './csv_utils.js';
 import {parseCsv} from './parser.js';
 
-const nbfiles = 84;
+const nbfiles = 5334;
 const nbthread = 4;
+
+const t1 = Date.now();
 
 const filehandle = await open('./csv/header.csv');
 const buf = await filehandle.readFile();
@@ -61,14 +65,13 @@ pm2.connect((err) => {
 });
 
 let total_inserts = 0;
-let total_time = 0;
 let workers_done = 0;
 
 // listen to workers messages
 pm2.launchBus((err, pm2_bus) => {
   pm2_bus.on('process:msg', function(packet) {
     const {process, data} = packet;
-    const {cmd, nb_inserts, time_ms, filename} = data;
+    const {cmd, nb_inserts, time_ms, filename, reason} = data;
     const {name} = process;
 
 
@@ -80,11 +83,11 @@ pm2.launchBus((err, pm2_bus) => {
       case 'worker_done':
         console.log(`${name}: ${nb_inserts} insertions in ${time_ms}ms`);
         total_inserts += nb_inserts;
-        total_time += time_ms;
         workers_done++;
 
         if (workers_done == nbthread) {
-          const insert_per_sec = total_inserts / total_time / 1000;
+          const total_time = Date.now() - t1;
+          const insert_per_sec = total_inserts / (total_time / 1000);
           console.log(`Total: ${total_inserts} insertions in ${total_time}ms !`);
           console.log(`Average: ${insert_per_sec} insertions / seconds !`);
           pm2.disconnect()
@@ -100,4 +103,60 @@ pm2.launchBus((err, pm2_bus) => {
         break;
     }
   });
+});
+
+function sendCommandToWorker(command, id) {
+  pm2.sendDataToProcessId({
+    id: id,
+    type: 'process:msg',
+    data : {
+      cmd: command,
+    },
+    topic: true,
+  }, () => {});
+}
+
+function sendCommandToWorkers(command) {
+  pm2.list((err, apps) => {
+    apps.forEach((app) => sendCommandToWorker(command, app.pm_id));
+  });
+}
+
+function pauseWorkers() {
+  sendCommandToWorkers('pause');
+}
+
+function resumeWorkers() {
+  sendCommandToWorkers('resume');
+}
+
+let pause = false;
+// prompt user for commands
+const rl = readline.createInterface({ input, output });
+rl.on('line', (input) => {
+  switch (input) {
+    case 'pause':
+      if (pause) {
+        console.log('insertion already paused');
+      } else {
+        pauseWorkers();
+        pause = true;
+        console.log('insertion paused - enter resume to resume the process');
+      }
+      break;
+
+    case 'resume':
+      if (pause) {
+        resumeWorkers();
+        pause = false;
+        console.log('insertion resumed !');
+      } else {
+        console.log('insertion not paused');
+      }
+      break;
+
+    default:
+      console.log('unknown command');
+      break;
+  }
 });
