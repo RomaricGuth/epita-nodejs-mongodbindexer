@@ -4,7 +4,7 @@ import {open, mkdir} from 'fs/promises';
 import {createReadStream, createWriteStream} from 'fs';
 import { stdin as input, stdout as output } from 'process';
 import * as readline from 'readline';
-import {splitCsvLine, splitCsvLineWithIndexes} from './csv_utils.js';
+import {splitCsvLineWithIndexes} from './csv_utils.js';
 import {parseCsv} from './parser.js';
 
 const nbfiles = 5334;
