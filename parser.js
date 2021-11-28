@@ -12,7 +12,7 @@ export const parseCsv = async (path, indexes, keys, client) => {
   const buf = Buffer.allocUnsafe(bufferLen);
   let bytesRead;
 
-  let entry = {};
+  let entry = {}; // buffer for our documents
 
   let nb_lines = 0;
   let nb_keeped_fields = 0; // number of fields stored from the line
@@ -20,22 +20,24 @@ export const parseCsv = async (path, indexes, keys, client) => {
   let field = []; // current field in array of charcode
   while ((bytesRead = (await filehandle.read(buf, 0, bufferLen)).bytesRead) !== 0) {
     for (let i = 0; i < bytesRead; ++i) {
-      const keep_field = nb_read_fields === indexes[nb_keeped_fields];
+      // read by chunks
+      const keep_field = nb_read_fields === indexes[nb_keeped_fields]; // keep field if current field index is in indexes array
       if (buf[i] === separator || buf[i] === endline) {
         if (keep_field) {
           // field must be indexed - add in js object
           if (field[0] !== undefined) {
             const key = keys[nb_keeped_fields];
-            entry[key] = String.fromCharCode(...field);
+            entry[key] = String.fromCharCode(...field); // get field as string
           }
           field = [];
           nb_keeped_fields++;
         }
 
         if (buf[i] === endline) {
-          bulk.insert(entry);
+          bulk.insert(entry); // insert document
           entry = {};
 
+          // reset counters
           nb_read_fields = 0;
           nb_keeped_fields = 0;
           nb_lines++;
@@ -43,13 +45,13 @@ export const parseCsv = async (path, indexes, keys, client) => {
           nb_read_fields++;
         }
       } else if (keep_field) {
-        field.push(buf[i]);
+        field.push(buf[i]); // store bytes of the field
       }
     }
   }
 
   filehandle.close();
-  await bulk.execute();
+  await bulk.execute(); // perform operations
 
   return nb_lines;
 }

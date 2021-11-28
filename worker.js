@@ -33,11 +33,11 @@ process.on('message', function({data}) {
     case 'pause':
       pause = true;
       const delta = Date.now() - t1;
-      total_time += delta; // store time elapsed when working
+      total_time += delta; // store time elapsed when working and stop timer
       break;
 
     case 'resume':
-      t1 = Date.now();
+      t1 = Date.now(); // restart timer
       pause = false;
       break;
 
@@ -54,12 +54,13 @@ await client.connect();
 let total_collections = 0;
 for (let filename of filenames) {
   while (pause) {
+    // wait resume
     await sleep(500);
   }
   const t2 = Date.now()
   const nb_collections = await parseCsv(filename, indexes, keys, client);
   const delta = Date.now() - t2;
-  sendDataToMaster({cmd: 'file_done', filename: filename, nb_inserts: nb_collections, time_ms: delta});
+  sendDataToMaster({cmd: 'file_done', filename: filename, nb_inserts: nb_collections, time_ms: delta}); // notify end of file
   total_collections += nb_collections;
 }
 
@@ -67,4 +68,4 @@ await client.close();
 
 const delta = Date.now() - t1;
 total_time += delta;
-sendDataToMaster({cmd: 'worker_done', nb_inserts: total_collections, time_ms: total_time});
+sendDataToMaster({cmd: 'worker_done', nb_inserts: total_collections, time_ms: total_time}); // notify end of all files

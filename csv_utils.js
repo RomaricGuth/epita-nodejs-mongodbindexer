@@ -1,6 +1,7 @@
 const separator = ','.charCodeAt(0);
 const endline = '\n'.charCodeAt(0);
 
+// split fields to array
 export const splitCsvLine = (buffer) => {
   let fields = [];
   let field = [];

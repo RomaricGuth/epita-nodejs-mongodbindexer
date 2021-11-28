@@ -17,7 +17,7 @@ const filehandle = await open('./csv/header.csv');
 const buf = await filehandle.readFile();
 filehandle.close();
 
-const fields =  splitCsvLine(buf);
+const fields =  splitCsvLine(buf); // split fields from header
 const needed = [
   'siren',
   'nic',
@@ -31,9 +31,9 @@ const needed = [
   'codeCommuneEtablissement',
   'dateDebut',
   'etatAdministratifEtablissement'
-];
+]; // fields that must be inserted in db
 
-const indexes = needed.map((key) => fields.indexOf(key));
+const indexes = needed.map((key) => fields.indexOf(key)); // get their indexes in header
 
 pm2.connect((err) => {
   if (err) {
@@ -42,17 +42,17 @@ pm2.connect((err) => {
   }
 
   const files_per_thread = Math.floor(nbfiles / nbthread);
-  const remain = nbfiles - nbthread * files_per_thread;
+  const remain = nbfiles - nbthread * files_per_thread; // files to add to first threads when division
 
   const filenames = new Array(nbfiles);
   for (let i = 0; i < nbfiles; i++) {
-    filenames[i] = `./csv/csv-${i.toString().padStart(4, '0')}.csv`;
+    filenames[i] = `./csv/csv-${i.toString().padStart(4, '0')}.csv`; // build array of every filenames
   }
 
-  for (let i = 0; i < nbthread; i++) {
-    const add_one_file = i < remain;
+  for (let i = 0; i < nbthread; i++) { // start threads
+    const add_one_file = i < remain; // add one file to first threads if we need to
     const first_file_index = i * files_per_thread + (add_one_file ? i : remain);
-    const arg_filenames = filenames.slice(first_file_index, first_file_index + files_per_thread + add_one_file);
+    const arg_filenames = filenames.slice(first_file_index, first_file_index + files_per_thread + add_one_file); // array of files to parse
     const args = [JSON.stringify(arg_filenames), JSON.stringify(indexes), JSON.stringify(needed)];
     pm2.start({
       script: './worker.js',
@@ -65,9 +65,9 @@ pm2.connect((err) => {
   }
 });
 
-const rl = readline.createInterface({ input, output });
-let total_inserts = 0;
-let workers_done = 0;
+const rl = readline.createInterface({ input, output }); // for user prompts
+let total_inserts = 0; // total number of documents inserted
+let workers_done = 0; // number of worker that are done
 
 // listen to workers messages
 pm2.launchBus((err, pm2_bus) => {
@@ -87,7 +87,7 @@ pm2.launchBus((err, pm2_bus) => {
         total_inserts += nb_inserts;
         workers_done++;
 
-        if (workers_done == nbthread) {
+        if (workers_done == nbthread) { // stop when each worker is done
           const delta = Date.now() - t1;
           total_time += delta;
           const insert_per_sec = total_inserts / (total_time / 1000);
@@ -120,7 +120,7 @@ function sendCommandToWorker(command, id) {
   }, () => {});
 }
 
-function sendCommandToWorkers(command) {
+function sendCommandToWorkers(command) { // get list of apps with pm2 and send command to each
   pm2.list((err, apps) => {
     apps.forEach((app) => sendCommandToWorker(command, app.pm_id));
   });
@@ -143,7 +143,7 @@ rl.on('line', (input) => {
         console.log('insertion already paused');
       } else {
         const delta = Date.now() - t1;
-        total_time += delta;
+        total_time += delta; // save time elapsed since last start and stop timer
         pauseWorkers();
         pause = true;
         console.log('insertion paused - enter resume to resume the process');
